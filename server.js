@@ -1,7 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const mysql = require('mysql2');
-const bcrypt = require('bcryptjs');   // changed from bcrypt to bcryptjs
+const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config();
 
@@ -22,12 +22,14 @@ app.use(session({
     }
 }));
 
-// MySQL connection
+// MySQL connection – updated for Aiven (SSL and port)
 const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'Shoharabchy',
-    database: process.env.DB_NAME || 'ecocar'
+    database: process.env.DB_NAME || 'ecocar',
+    port: process.env.DB_PORT || 3306,
+    ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : false
 });
 
 db.connect((err) => {
