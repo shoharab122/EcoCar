@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - EcoCar</title>
+    <link rel="stylesheet" href="apps.css">
+    <style>
+        body { background: #e0f7fa; font-family: 'Segoe UI', sans-serif; }
+        .orders-container { max-width: 1200px; margin: 2rem auto; background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h1 { color: #1b5e20; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #2e7d32; color: white; }
+        tr:nth-child(even) { background: #f1f8e9; }
+        .items-list { font-size: 0.85rem; margin: 0; padding-left: 1rem; }
+        .logout-btn { background: #ff7043; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
+        .logout-btn:hover { background: #f4511e; }
+        .back-btn { background: #2e7d32; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+        .back-btn:hover { background: #1b5e20; }
+        .no-orders { text-align: center; padding: 2rem; color: #666; }
+        .status-pending { color: #ff9800; font-weight: bold; }
+        .status-confirmed { color: #2196f3; font-weight: bold; }
+        .status-shipped { color: #9c27b0; font-weight: bold; }
+        .status-delivered { color: #4caf50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="orders-container">
+        <h1>📦 My Orders</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="back-btn" onclick="goBack()">Back to Shop</button>
+        <div id="orders-list">
+            <p>Loading your orders...</p>
+        </div>
+    </div>
+    <script>
+        async function loadMyOrders() {
+            try {
+                const res = await fetch('/api/my-orders');
+                if (res.status === 401) {
+                    document.getElementById('orders-list').innerHTML = '<div class="no-orders">🔐 Please <a href="/">login</a> to view your orders.</div>';
+                    return;
+                }
+                if (!res.ok) throw new Error('Failed to load orders');
+                const orders = await res.json();
+                if (orders.length === 0) {
+                    document.getElementById('orders-list').innerHTML = '<div class="no-orders">📭 You haven\'t placed any orders yet.</div>';
+                    return;
+                }
+                let html = ` <table>
+                    <thead>
+                        <tr><th>Order ID</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                `;
+                orders.forEach(order => {
+                    let itemsHtml = '<ul class="items-list">';
+                    order.items.forEach(item => {
+                        itemsHtml += `<li>${escapeHtml(item.name)} x ${item.quantity} = ৳${(item.price * item.quantity).toFixed(2)}</li>`;
+                    });
+                    itemsHtml += '</ul>';
+                    
+                    let statusClass = '';
+                    if (order.status === 'pending') statusClass = 'status-pending';
+                    else if (order.status === 'confirmed') statusClass = 'status-confirmed';
+                    else if (order.status === 'shipped') statusClass = 'status-shipped';
+                    else if (order.status === 'delivered') statusClass = 'status-delivered';
+                    
+                    html += `<tr>
+                        <td>#${order.id}</td>
+                        <td>${new Date(order.order_date).toLocaleString()}</td>
+                        <td>${itemsHtml}</td>
+                        <td><strong>৳${parseFloat(order.total).toFixed(2)}</strong></td>
+                        <td class="${statusClass}">${order.status || 'pending'}</td>
+                    </tr>`;
+                });
+                html += '</tbody> </table>';
+                document.getElementById('orders-list').innerHTML = html;
+            } catch (err) {
+                document.getElementById('orders-list').innerHTML = '<div class="no-orders">⚠️ Error loading orders.</div>';
+                console.error(err);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/';
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        loadMyOrders();
+    </script>
+</body>
+</html>
