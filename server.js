@@ -1,7 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const mysql = require('mysql2');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');   // changed from bcrypt to bcryptjs
 const path = require('path');
 require('dotenv').config();
 
